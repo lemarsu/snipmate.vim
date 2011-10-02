@@ -24,6 +24,30 @@ if !exists('snippets_dir')
 	let snippets_dir = substitute(globpath(&rtp, 'snippets/'), "\n", ',', 'g')
 endif
 
+" Configuration options
+" g:snipmate_trigger_key contains the key mapping for activating snipmate.
+if !exists("g:snipmate_trigger_key")
+	let g:snipmate_trigger_key = "\<tab>"
+endif
+
+" g:snipmate_backwards_trigger_key contains the key mapping for activating snipmate.
+if !exists("g:snipmate_backwards_trigger_key")
+	let g:snipmate_backwards_trigger_key = "\<s-tab>"
+endif
+
+" If g:snipmate_supertab_integration is set to 0 then snipmate won't try to
+" integrate with supertab
+if !exists("g:snipmate_supertab_integration")
+	let g:snipmate_supertab_integration = 1
+endif
+
+fun! ReplaceChars(str)
+  exe "return \"". substitute(a:str, "<\\([^>]\\+\\)>", "\\\\<\\1>", "g") ."\""
+endfun
+
+let s:snipmate_trigger_key           = ReplaceChars(g:snipmate_trigger_key)
+let s:snipmate_backwards_trigger_key = ReplaceChars(g:snipmate_backwards_trigger_key)
+
 fun! MakeSnip(scope, trigger, content, ...)
 	let multisnip = a:0 && a:1 != ''
 	let var = multisnip ? 's:multi_snips' : 's:snippets'
@@ -147,7 +171,7 @@ fun s:DefineSnips(dir, aliasft, realft)
 endf
 
 fun! TriggerSnippet()
-	if exists('g:SuperTabMappingForward')
+	if g:snipmate_supertab_integration && exists('g:SuperTabMappingForward')
 		if g:SuperTabMappingForward == "<tab>"
 			let SuperTabKey = "\<c-n>"
 		elseif g:SuperTabMappingBackward == "<tab>"
@@ -160,7 +184,7 @@ fun! TriggerSnippet()
 			call feedkeys(SuperTabKey) | return ''
 		endif
 		call feedkeys("\<esc>a", 'n') " Close completion menu
-		call feedkeys("\<tab>") | return ''
+		call feedkeys(s:snipmate_trigger_key) | return ''
 	endif
 
 	if exists('g:snipPos') | return snipMate#jumpTabStop(0) | endif
@@ -181,13 +205,13 @@ fun! TriggerSnippet()
 		call feedkeys(SuperTabKey)
 		return ''
 	endif
-	return "\<tab>"
+	return s:snipmate_trigger_key
 endf
 
 fun! BackwardsSnippet()
 	if exists('g:snipPos') | return snipMate#jumpTabStop(1) | endif
 
-	if exists('g:SuperTabMappingForward')
+	if g:snipmate_supertab_integration && exists('g:SuperTabMappingForward')
 		if g:SuperTabMappingBackward == "<s-tab>"
 			let SuperTabKey = "\<c-p>"
 		elseif g:SuperTabMappingForward == "<s-tab>"
@@ -198,7 +222,7 @@ fun! BackwardsSnippet()
 		call feedkeys(SuperTabKey)
 		return ''
 	endif
-	return "\<s-tab>"
+	return s:snipmate_backwards_trigger_key
 endf
 
 " Check if word under cursor is snippet trigger; if it isn't, try checking if
